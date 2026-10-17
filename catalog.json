@@ -1,10 +1,88 @@
-{
-  "updated": "2026-10-17",
-  "pens": [
-    {
-      "code": "VEP0060",
-      "name": "Panda",
-      "series": "Classiche"
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Penquest — elenco penne</title>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", sans-serif; color: #2a1830; background: #fff1e8; }
+    main { max-width: 880px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { margin: 0 0 8px; }
+    p { margin: 0 0 12px; }
+    .muted { color: #6b5a63; }
+    input { width: 100%; height: 44px; border: 1px solid #f3d7c8; border-radius: 12px; padding: 0 12px; box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; background: white; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #f3d7c8; vertical-align: top; }
+    th { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: #6b5a63; }
+    a { color: #e11d48; }
+    .no { color: #6b5a63; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Penquest</h1>
+    <p class="muted">App non ufficiale, non affiliata a Legami. Elenco aggiornato il <span id="when">—</span>.</p>
+    <input id="q" type="search" placeholder="Cerca nome o codice" />
+    <table>
+      <thead>
+        <tr><th>Codice</th><th>Nome</th><th>Tipo</th><th>Nei negozi</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </main>
+  <script>
+    const rows = document.querySelector("#rows");
+    const query = document.querySelector("#q");
+    let pens = [];
+    function draw() {
+      const q = query.value.trim().toLowerCase();
+      rows.replaceChildren();
+      for (const pen of pens) {
+        const hay = `${pen.code} ${pen.name} ${pen.slogan || ""} ${pen.series || ""}`.toLowerCase();
+        if (q && !hay.includes(q)) continue;
+        const tr = document.createElement("tr");
+        const codeCell = document.createElement("td");
+        if (pen.url && pen.code) {
+          const link = document.createElement("a");
+          link.href = pen.url;
+          link.textContent = pen.code;
+          codeCell.append(link);
+        } else {
+          codeCell.textContent = pen.code || "—";
+        }
+        const nameCell = document.createElement("td");
+        nameCell.textContent = pen.review ? `${pen.name} (da controllare)` : pen.name;
+        if (pen.slogan) {
+          const slogan = document.createElement("div");
+          slogan.className = "muted";
+          slogan.textContent = pen.slogan;
+          nameCell.append(slogan);
+        }
+        const tierCell = document.createElement("td");
+        tierCell.textContent = pen.tier || "—";
+        const shopCell = document.createElement("td");
+        shopCell.textContent = pen.inShops ? "Ancora sì" : "Non più";
+        if (!pen.inShops) shopCell.className = "no";
+        tr.append(codeCell, nameCell, tierCell, shopCell);
+        rows.append(tr);
+      }
     }
-  ]
-}
+    query.addEventListener("input", draw);
+    fetch("catalog.json")
+      .then((response) => response.json())
+      .then((data) => {
+        pens = data.pens || [];
+        document.querySelector("#when").textContent = data.updated || "—";
+        draw();
+      })
+      .catch(() => {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.textContent = "Elenco non disponibile.";
+        tr.append(td);
+        rows.append(tr);
+      });
+  </script>
+</body>
+</html>
